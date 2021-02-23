@@ -1,0 +1,23 @@
+apply plugin: 'maven-publish'
+
+version = '0.0.1-SNAPSHOT'
+
+publishing {
+  repositories {
+    maven {
+      credentials(PasswordCredentials) {
+        username = artifactoryUsername
+        password = artifactoryPassword
+      }
+      name = "artifactory.mediamath.libs-snapshot"
+      url = "https://artifactory.mediamath.com/artifactory/libs-snapshot-local"
+    }
+  }
+  publications {
+    mavenScala(MavenPublication) {
+      artifactId = 'msmt-config-lib'
+
+      from components.java
+    }
+  }
+}

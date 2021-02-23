@@ -1,0 +1,99 @@
+plugins {
+  id 'scala'
+  id 'maven-publish'
+  id 'java-library'
+  id 'com.github.maiflai.scalatest' version  "0.25"
+}
+
+allprojects {
+
+  apply plugin: 'scala'
+  apply plugin: 'com.github.maiflai.scalatest'
+
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
+
+  project.group = 'com.mediamath'
+
+  ext {
+    scala_full_version = '2.11.12'
+    spark_full_version = '2.4.0-cdh6.1.0'
+    kafka_full_version = '2.0.0-cdh6.1.0'
+    versions = [
+        scala_full      : scala_full_version,
+        scala           : scala_full_version.tokenize('.').dropRight(1).join('.'),
+        spark           : spark_full_version,
+        spark_kafka     : '0-10',
+        spark_kudu      : '1.8.0-cdh6.1.0',
+        spark_avro      : spark_full_version,
+        spark_short        : spark_full_version.tokenize('-').get(0),
+        spark_testing_base : '0.11.0',
+        kafka           : kafka_full_version.tokenize('.').dropRight(2).join('-'),
+        scala_logging   : '3.9.0',
+        typesafe_config : '1.3.2',
+        ficus           : '1.4.3',
+        pegdown         : '1.4.2',
+        abris           : '2.2.3',
+        avro            : '1.8.2-cdh6.1.0',
+        scalatest       : '3.0.5',
+        bijection       : '0.9.6',
+    ]
+    artifactoryUsername = System.getenv()['ARTIFACTORY_USERNAME'] ?: "$artifactoryUsername"
+    artifactoryPassword = System.getenv()['ARTIFACTORY_PASSWORD'] ?: "$artifactoryPassword"
+  }
+
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "https://repository.cloudera.com/artifactory/cloudera-repos/" }
+    maven { url "http://maven.twttr.com/" }
+    maven { url "http://oss.sonatype.org/content/groups/public" }
+    maven { url "http://packages.confluent.io/maven/" }
+    maven {
+      url "http://artifactory.mediamath.com/artifactory/libs-snapshot-local"
+      credentials {
+        username = artifactoryUsername
+        password = artifactoryPassword
+      }
+    }
+  }
+
+  dependencies {
+    compile (
+      "org.scala-lang:scala-library:$versions.scala_full",
+      "org.scala-lang:scala-compiler:$versions.scala_full",
+      "com.typesafe.scala-logging:scala-logging_$versions.scala:$versions.scala_logging",
+      "com.typesafe:config:$versions.typesafe_config"
+    )
+    testCompile "org.scalatest:scalatest_$versions.scala:$versions.scalatest"
+    testRuntime "org.pegdown:pegdown:$versions.pegdown"
+  }
+
+// You have to run gradle with "--no-daemon" and "--console plain" for this to work properly.  Seems like there should
+// be some sort of slick way of controlling this from within the task, but there might not be, and if there is,
+// I don't know what it is so you're kinda stuck doing it on your own
+// See: https://stackoverflow.com/questions/35632085/scala-repl-in-gradle
+  task repl(type: JavaExec) {
+    main = "scala.tools.nsc.MainGenericRunner"
+    classpath = sourceSets.main.runtimeClasspath
+    standardInput System.in
+    args '-usejavacp'
+  }
+
+// Integration tests are taggedAs 'Slow' via ScalaTest, exclude them from the main 'test' run
+// so that the tests don't bomb when external service dependencies are unavailable or things
+// are otherwise just going to be slower than you'd want during a default test run
+  test {
+    maxParallelForks = 1
+    tags {
+      exclude 'org.scalatest.tags.Slow'
+    }
+  }
+
+  task integrationTest(type: Test) {
+    maxParallelForks = 1
+    tags {
+      include 'org.scalatest.tags.Slow'
+    }
+  }
+}

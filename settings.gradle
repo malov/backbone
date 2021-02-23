@@ -1,0 +1,3 @@
+rootProject.name = 'backbone'
+include 'config-lib',
+        'config-examples'

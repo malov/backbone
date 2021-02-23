@@ -1,0 +1,8 @@
+version = '0.0.1-SNAPSHOT'
+dependencies {
+  compile project(':config-lib')
+  compile "com.iheart:ficus_$versions.scala:$versions.ficus"
+  compile "org.apache.spark:spark-sql-kafka-${versions.spark_kafka}_${versions.scala}:$versions.spark"
+  compile "org.apache.spark:spark-core_$versions.scala:$versions.spark"
+}
+
